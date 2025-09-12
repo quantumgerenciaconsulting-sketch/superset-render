@@ -1,8 +1,12 @@
 FROM apache/superset:latest
 
 USER root
-RUN pip install --no-cache-dir PyMySQL
-
+ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
+RUN mkdir -p /app/pythonpath \
+ && pip install --no-cache-dir --target /app/pythonpath PyMySQL
 USER superset
+
 COPY start.sh /start.sh
-CMD [\"sh\", \"/start.sh\"]
+
+EXPOSE 8088
+CMD ["sh", "/start.sh"]
