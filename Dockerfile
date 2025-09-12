@@ -1,23 +1,18 @@
 FROM apache/superset:latest
 
+# Instalamos el driver dentro de un path que Superset carga por defecto
 USER root
+ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
+RUN mkdir -p /app/pythonpath \
+ && pip install --no-cache-dir --target /app/pythonpath PyMySQL
 
-# Instalar dependencias del sistema para MySQL
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Instalar conectores de Python para MySQL
-RUN pip install --no-cache-dir \
-    mysqlclient \
-    PyMySQL \
-    cryptography
-
+# Volvemos al usuario normal de Superset
 USER superset
 
+# Script de arranque
 COPY start.sh /start.sh
 
 EXPOSE 8088
-CMD ["sh", "/start.sh"]
+CMD ["sh","/start.sh"]
+
+
