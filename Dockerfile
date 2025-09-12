@@ -1,8 +1,10 @@
 FROM apache/superset:latest
 
-# Instalamos solo PyMySQL (driver 100% Python, no requiere compilación)
+# Cambiamos a root para instalar paquetes
 USER root
-RUN pip install pymysql
+
+# Actualizamos pip y agregamos PyMySQL
+RUN pip install --upgrade pip && pip install PyMySQL
 
 # Volvemos al usuario superset
 USER superset
@@ -10,6 +12,8 @@ USER superset
 # Copiamos el script de inicio
 COPY start.sh /start.sh
 
+# Exponemos el puerto
 EXPOSE 8088
 
+# Ejecutamos el script
 CMD ["sh", "/start.sh"]
