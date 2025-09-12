@@ -3,7 +3,7 @@ FROM apache/superset:latest
 # Cambiamos a root para instalar paquetes
 USER root
 
-# Actualizamos pip y agregamos PyMySQL
+# Actualizamos pip e instalamos PyMySQL
 RUN pip install --upgrade pip && pip install PyMySQL
 
 # Volvemos al usuario superset
