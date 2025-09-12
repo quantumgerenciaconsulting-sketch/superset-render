@@ -1,0 +1,298 @@
+# Superset en Render + MySQL (Quantum)
+
+Guía práctica para desplegar **Apache Superset** en **Render** usando **GitHub (IaC)**, conectarlo a **MySQL (nexopos)** y dejarlo listo para crear **datasets, charts y dashboards** con opciones de **compartir público/roles**.
+
+---
+
+## 0) Resumen ejecutivo
+
+* **Infra reproducible**: repo en GitHub con `Dockerfile`, `start.sh` y `superset_config.py`.
+* **Driver correcto**: Superset corre con **PyMySQL** (sin MySQLdb) → URI `mysql+pymysql://...`.
+* **Render Web Service**: build desde Docker, puerto `8088`, `-w 1` para no exceder RAM.
+* **Conexión validada**: nexopos (MySQL) con password escapada (`?` → `%3F`).
+* **Productivo**: datasets, SQL Lab, charts, dashboards; **compartir público** y **roles** listos.
+* **Buenas prácticas**: usuario **read-only**, `SUPERSET_SECRET_KEY`, roles mínimos.
+
+---
+
+## 1) Estructura del repositorio
+
+```
+.
+├─ Dockerfile
+├─ start.sh
+├─ superset_config.py
+├─ render.yaml                # (opcional) Infra como código en Render
+├─ README.md
+└─ .dockerignore
+```
+
+> **Objetivo**: que Render construya siempre la misma imagen y arranque Superset listo para usar.
+
+---
+
+## 2) Dockerfile (driver PyMySQL instalado en el entorno de Superset)
+
+> La imagen base **no** incluye drivers de MySQL. Instalamos **PyMySQL** y exponemos `superset_config.py` vía `PYTHONPATH`.
+
+```dockerfile
+# Dockerfile
+FROM apache/superset:latest
+
+# Cambiar a usuario superset (ya creado en la imagen base)
+USER superset
+
+# Copiamos la configuración para alias MySQLdb -> PyMySQL
+COPY --chown=superset:superset superset_config.py /app/pythonpath/superset_config.py
+ENV PYTHONPATH="/app/pythonpath"
+
+# Instalamos el driver de MySQL
+RUN pip install --no-cache-dir "PyMySQL>=1.1.0"
+
+# Script de arranque
+COPY --chown=superset:superset start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+EXPOSE 8088
+CMD ["/app/start.sh"]
+```
+
+---
+
+## 3) `start.sh` (migraciones, admin idempotente, arranque Gunicorn)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Migraciones de BD interna de Superset (por defecto SQLite en /app/superset_home)
+superset db upgrade
+
+# Crear usuario admin (idempotente)
+superset fab create-admin \
+  --username "${ADMIN_USERNAME:-admin}" \
+  --firstname "${ADMIN_FIRSTNAME:-Admin}" \
+  --lastname  "${ADMIN_LASTNAME:-User}" \
+  --email     "${ADMIN_EMAIL:-admin@quantumpos.com.co}" \
+  --password  "${ADMIN_PASSWORD:-admin}" || true
+
+# Inicializar superset (roles, ejemplos opcionales, etc.)
+superset init
+
+# Arrancar Gunicorn: -w 1 (Render Free) para evitar reinicios por memoria
+gunicorn \
+  -w "${GUNICORN_WORKERS:-1}" \
+  -k gevent \
+  --timeout 60 \
+  -b 0.0.0.0:8088 \
+  "superset.app:create_app()"
+```
+
+> **Nota**: En planes con más RAM/CPU puedes subir `GUNICORN_WORKERS`.
+
+---
+
+## 4) `superset_config.py` (alias MySQLdb → PyMySQL y opciones de sharing)
+
+```python
+# superset_config.py
+import pymysql
+pymysql.install_as_MySQLdb()  # Si algo intenta MySQLdb, usa PyMySQL debajo
+
+# Compartir sin login (opcional; ver sección 8)
+# Clona permisos de Gamma a Public para visualizar dashboards/datasets permitidos
+PUBLIC_ROLE_LIKE = "Gamma"
+AUTH_ROLE_PUBLIC = "Public"
+
+# Flags recomendados (ajusta según versión)
+FEATURE_FLAGS = {
+    "ENABLE_TEMPLATE_PROCESSING": True,
+}
+
+# Seguridad (definir en variables de entorno en Render)
+# SUPERSET_SECRET_KEY se define como env var, no aquí.
+```
+
+---
+
+## 5) Render: Web Service (build & deploy)
+
+1. **Crear servicio** → *New +* → *Web Service* → conectar repo de GitHub.
+2. Render detecta `Dockerfile`. Puerto: **8088**.
+3. **Variables de entorno** (mínimas):
+
+   * `FLASK_ENV=production`
+   * `SUPERSET_SECRET_KEY=<cadena aleatoria fuerte>`
+   * `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_EMAIL` (opcionales)
+   * **No** definir `SQLALCHEMY_DATABASE_URI` (así la metadata interna queda en SQLite).
+4. **Plan**: Free → `-w 1`. Escalar workers si subes de plan.
+5. **Deploy** y validar logs hasta ver Gunicorn *listening on 0.0.0.0:8088*.
+
+> **Opcional – Infra como código** (`render.yaml`):
+>
+> ```yaml
+> services:
+>   - type: web
+>     name: superset-quantum
+>     runtime: docker
+>     envVars:
+>       - key: FLASK_ENV
+>         value: production
+>       - key: SUPERSET_SECRET_KEY
+>         generateValue: true
+>       - key: ADMIN_USERNAME
+>         value: admin
+>       - key: ADMIN_PASSWORD
+>         value: cambia-esta-clave
+>       - key: ADMIN_EMAIL
+>         value: admin@quantumpos.com.co
+>     plan: free
+>     autoDeploy: true
+> ```
+
+---
+
+## 6) Conexión a MySQL (nexopos)
+
+En Superset: **Settings → Database Connections → + Database**.
+
+* **Driver**: *Other → SQLAlchemy URI*
+* **URI**: `mysql+pymysql://<usuario>:<password_escapado>@<host>:<puerto>/<db>`
+
+**Ejemplo validado** (con `?` escapado a `%3F`):
+
+```
+mysql+pymysql://root:y7%3FW40zE7y@app.quantumpos.com.co:3306/nexopos
+```
+
+> **Recomendado**: crear **usuario de solo lectura** para Superset.
+>
+> ```sql
+> -- En MySQL, con un usuario con privilegios de admin
+> CREATE USER 'superset_ro'@'%' IDENTIFIED BY 'contraseña-segura';
+> GRANT SELECT ON nexopos.* TO 'superset_ro'@'%';
+> FLUSH PRIVILEGES;
+> ```
+
+---
+
+## 7) Datasets, SQL Lab y Charts
+
+* **Dataset**: *Data → Datasets → + Dataset* → seleccionar conexión (nexopos), `schema` (si aplica) y tabla.
+* **SQL Lab**: consultas de validación: `SELECT * FROM tabla LIMIT 5;`
+
+  * Evitar funciones bloqueadas/controladas por políticas del servidor.
+* **Charts**: *Charts → + Chart* → elegir dataset → configurar **métricas** y **dimensiones** → *Save* y agregar a un **Dashboard**.
+* **Columnas/Métricas virtuales**: *Edit dataset* → pestañas **Columns**/**Metrics**: expresiones SQL compatibles con MySQL.
+
+---
+
+## 8) Compartir / Accesos (público y por rol)
+
+### Público sin login (dashboard de lectura)
+
+1. En `superset_config.py`: `PUBLIC_ROLE_LIKE = "Gamma"` y `AUTH_ROLE_PUBLIC = "Public"` (incluido arriba).
+2. En **Security → List Roles → Public**: conceder **dataset access** y **dashboard access** (solo a lo necesario).
+3. Abrir dashboard → **Share** → copiar URL. Probar en incógnito.
+
+> **Principio**: mínimo privilegio. Evitar otorgar acceso global a *toda* la BD.
+
+### Ver solo 1 chart
+
+* Crear **dashboard** con un único chart.
+* Crear **rol** dedicado con *Dashboard access* a ese dashboard y *Dataset access* únicamente a las tablas usadas por ese chart.
+* Asignar el rol al usuario/usuario público según el caso.
+
+> **RLS (opcional)**: *Security → Row Level Security* para filtrar por tienda/usuario.
+
+---
+
+## 9) Buenas prácticas y operación
+
+* **Seguridad**
+
+  * No usar `root` en producción → usar `superset_ro` (solo lectura).
+  * Cambiar contraseña de `admin` y configurar `SUPERSET_SECRET_KEY`.
+  * Revisar roles de `Public` y permisos concedidos.
+* **Estabilidad**
+
+  * Mantener `-w 1` en Render Free; escalar en planes superiores.
+  * No borrar la metadata (SQLite) en cada deploy una vez estable.
+* **Siguientes pasos**
+
+  * SMTP/Redis/Celery → **Alerts & Reports** por email (programables).
+  * **Embed** con Guest Token para iFrames seguros (si vas a incrustar en apps externas).
+
+---
+
+## 10) Solución de problemas (lo que ya resolvimos)
+
+* **"Could not load database driver: MySQLEngineSpec"** o **"No module named MySQLdb"**
+
+  * Faltaba el driver → Instalado `PyMySQL` en la imagen.
+  * `superset_config.py` con `pymysql.install_as_MySQLdb()` para alias transparente.
+* **Contraseñas con símbolos**
+
+  * En la URI escapamos caracteres especiales (`?` → `%3F`, etc.).
+* **Metadata interna pegada a mysql://**
+
+  * Si una conexión vieja quedó con `mysql://`/MySQLdb, limpiar y recrear conexión/datasets.
+
+---
+
+## 11) Checklists
+
+### Deploy inicial
+
+* [ ] Repo con `Dockerfile`, `start.sh`, `superset_config.py` y `render.yaml` (opcional)
+* [ ] Variables en Render: `SUPERSET_SECRET_KEY`, `ADMIN_*`, `FLASK_ENV=production`
+* [ ] Arranque con `-w 1`
+* [ ] Acceso al panel de Superset ok
+
+### Conexión a MySQL
+
+* [ ] Usuario `superset_ro` creado con `SELECT` sobre `nexopos.*`
+* [ ] URI `mysql+pymysql://` validada en **Test Connection**
+
+### Datasets & Dashboards
+
+* [ ] Datasets creados (tablas necesarias)
+* [ ] Charts creados y guardados
+* [ ] Dashboard(s) armado(s)
+
+### Seguridad / Sharing
+
+* [ ] Roles y permisos mínimos
+* [ ] Si es público: `Public` con acceso solo a lo necesario
+* [ ] Links de share verificados en incógnito
+
+---
+
+## 12) Anexos útiles
+
+### .dockerignore (sugerido)
+
+```
+**/__pycache__/
+**/*.pyc
+.env
+.superset/
+**/.DS_Store
+```
+
+### Variables de entorno (ejemplo)
+
+```
+FLASK_ENV=production
+SUPERSET_SECRET_KEY=pon-una-clave-aleatoria-bien-larga
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=cambia-esta-clave
+ADMIN_EMAIL=admin@quantumpos.com.co
+GUNICORN_WORKERS=1
+```
+
+---
+
+## 13) En corto
+
+Montamos **infra reproducible** (GitHub + Docker), empaquetamos Superset con el **driver correcto**, desplegamos en **Render**, conectamos a **MySQL (nexopos)** con la URI `+pymysql` (clave escapada), creamos **datasets/charts**, y dejamos **sharing/roles** y **buenas prácticas** para operar en producción. ✅
