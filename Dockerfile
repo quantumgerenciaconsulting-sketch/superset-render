@@ -1,11 +1,16 @@
 FROM apache/superset:latest
 
+# Usamos sh -lc para poder "source" el venv
+SHELL ["/bin/sh","-lc"]
+
+# Instalamos PyMySQL dentro del virtualenv que usa Superset
 USER root
-ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
-RUN mkdir -p /app/pythonpath \
- && pip install --no-cache-dir --target /app/pythonpath PyMySQL
+RUN . /app/.venv/bin/activate && pip install --no-cache-dir PyMySQL
+
+# Volvemos al usuario por defecto de Superset
 USER superset
 
+# Tu script de arranque (el que ya tienes funcionando)
 COPY start.sh /start.sh
 
 EXPOSE 8088
