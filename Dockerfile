@@ -1,8 +1,8 @@
 FROM apache/superset:latest
 
-# Instalamos driver de MySQL
+# Instalamos solo PyMySQL (no mysqlclient, así evitamos compilar)
 USER root
-RUN pip install mysqlclient pymysql
+RUN pip install pymysql
 
 # Volvemos al usuario superset
 USER superset
