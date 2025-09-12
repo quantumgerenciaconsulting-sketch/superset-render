@@ -2,8 +2,8 @@ FROM apache/superset:latest
 
 USER root
 
-# Activamos el venv y luego instalamos PyMySQL ahí
-RUN /app/.venv/bin/pip install --upgrade pip && /app/.venv/bin/pip install PyMySQL
+# Instalar PyMySQL globalmente
+RUN pip install --no-cache-dir PyMySQL
 
 USER superset
 
