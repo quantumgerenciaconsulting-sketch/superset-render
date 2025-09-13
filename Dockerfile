@@ -27,3 +27,7 @@ COPY start.sh /start.sh
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
+
+USER root
+COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
+USER superset
