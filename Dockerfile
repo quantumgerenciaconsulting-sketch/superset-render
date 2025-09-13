@@ -1,33 +1,34 @@
 FROM apache/superset:latest
 
-# Necesitamos sh -lc para usar "source" (.) del venv
+# Para poder usar "source" del venv en RUN si hace falta
 SHELL ["/bin/sh","-lc"]
 
 USER root
 
-# Asegura que /app/pythonpath esté en el path de Superset y Python lo vea
+# Que Superset cargue nuestro pythonpath
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
-RUN mkdir -p /app/pythonpath
+RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Instala PyMySQL **dentro** del virtualenv que usa Superset.
-# Si la imagen trae 'uv', úsalo; si no, usa pip del venv.
+# Driver MySQL (en el venv de Superset)
 RUN if command -v uv >/dev/null 2>&1; then \
       . /app/.venv/bin/activate && uv pip install PyMySQL; \
     else \
       /app/.venv/bin/pip install --no-cache-dir PyMySQL; \
     fi
 
-# Carga una config que aliasée MySQLdb -> PyMySQL por si algo lo requiere
+# Config de Superset (alias MySQLdb -> PyMySQL)
 COPY superset_config.py /app/pythonpath/superset_config.py
+
+# >>> NUEVO: copia tu logo a los estáticos del propio Superset
+# Asegúrate de tener 'assets/quantum-bg.png' en tu repo
+COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
+# (Opcional) si quieres asegurar permisos de lectura para el usuario 'superset':
+# RUN chown superset:superset /app/superset/static/assets/quantum-bg.png
 
 USER superset
 
-# Tu script de arranque
+# Script de arranque
 COPY start.sh /start.sh
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
-
-USER root
-COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
-USER superset
