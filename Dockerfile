@@ -7,11 +7,9 @@ USER root
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Instalar PyMySQL
-RUN pip install --no-cache-dir PyMySQL
-
-# Instalar dependencias extra (sin mysqlclient)
-RUN pip install --no-cache-dir \
+# Instalar PyMySQL y extras dentro del venv de Superset
+RUN /app/.venv/bin/pip install --no-cache-dir \
+      PyMySQL \
       psycopg2-binary \
       redis \
       celery \
