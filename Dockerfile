@@ -7,12 +7,11 @@ USER root
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Instalar PyMySQL (para MySQL si lo necesitas)
+# Instalar PyMySQL
 RUN pip install --no-cache-dir PyMySQL
 
-# Instalar dependencias extra para habilitar Reports/Alerts y más drivers
+# Instalar dependencias extra (sin mysqlclient)
 RUN pip install --no-cache-dir \
-      mysqlclient \
       psycopg2-binary \
       redis \
       celery \
@@ -21,7 +20,7 @@ RUN pip install --no-cache-dir \
 # Configuración
 COPY superset_config.py /app/pythonpath/superset_config.py
 
-# Imagen para el fondo (ya la subiste al repo en assets/)
+# Imagen para el fondo
 COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 RUN chmod 0644 /app/superset/static/assets/quantum-bg.png
 
