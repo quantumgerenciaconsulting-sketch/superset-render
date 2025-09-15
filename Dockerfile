@@ -7,20 +7,22 @@ USER root
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Instalar PyMySQL y dependencias extra directamente con pip global
-RUN pip install --no-cache-dir \
-      PyMySQL \
-      psycopg2-binary \
-      redis \
-      celery \
-      weasyprint
+# Driver MySQL dentro del venv de Superset
+RUN if command -v uv >/dev/null 2>&1; then \
+      . /app/.venv/bin/activate && uv pip install PyMySQL; \
+    else \
+      /app/.venv/bin/pip install --no-cache-dir PyMySQL; \
+    fi
 
-# Configuración
+# Config (alias MySQLdb -> PyMySQL)
 COPY superset_config.py /app/pythonpath/superset_config.py
 
-# Imagen para el fondo
+# >>> Imagen para el fondo (ya la subiste al repo en assets/)
 COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 RUN chmod 0644 /app/superset/static/assets/quantum-bg.png
+
+# (Opcional) asigna propiedad al usuario 'superset'
+# RUN chown -R superset:superset /app/pythonpath /app/superset/static/assets
 
 USER superset
 
