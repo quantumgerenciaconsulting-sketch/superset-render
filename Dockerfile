@@ -7,17 +7,25 @@ USER root
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Driver MySQL dentro del venv de Superset
+# Instalar PyMySQL (como ya hacías)
 RUN if command -v uv >/dev/null 2>&1; then \
       . /app/.venv/bin/activate && uv pip install PyMySQL; \
     else \
       /app/.venv/bin/pip install --no-cache-dir PyMySQL; \
     fi
 
-# Config (alias MySQLdb -> PyMySQL)
+# Instalar dependencias extra para habilitar Reports/Alerts y más drivers
+RUN /app/.venv/bin/pip install --no-cache-dir \
+      mysqlclient \
+      psycopg2-binary \
+      redis \
+      celery \
+      weasyprint
+
+# Configuración (alias MySQLdb -> PyMySQL)
 COPY superset_config.py /app/pythonpath/superset_config.py
 
-# >>> Imagen para el fondo (ya la subiste al repo en assets/)
+# Imagen para el fondo (ya la subiste al repo en assets/)
 COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 RUN chmod 0644 /app/superset/static/assets/quantum-bg.png
 
