@@ -33,7 +33,15 @@ SMTP_PASSWORD = "TU_API_KEY_O_PASSWORD"   # API key o password SMTP
 SMTP_MAIL_FROM = "reportes@quantumpos.com.co"
 
 # ===========================================
-# BRANDING OPCIONAL
+# BRANDING PERSONALIZADO
 # ===========================================
 APP_NAME = "Quantum POS Analytics"
+
+# Ícono en login y favicon
+APP_ICON = "/static/assets/quantum-bg.png"
+
+# Logo en la parte superior izquierda (reemplaza el de Superset)
+LOGO_ICON = "/static/assets/quantum-bg.png"
+
+# Favicon en la pestaña del navegador
 FAVICONS = [{"href": "/static/assets/quantum-bg.png"}]
