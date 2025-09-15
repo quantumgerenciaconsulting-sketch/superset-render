@@ -38,7 +38,7 @@ SMTP_MAIL_FROM = "gerencia@quantumpos.com.co"
 APP_NAME = "Quantum POS Analytics"
 
 # Ícono en login y favicon
-APP_ICON = "/static/assets/quantumdedoarriba.png"
+APP_ICON = "/static/assets/quantumpaz.png"
 
 # Logo en la parte superior izquierda (reemplaza el de Superset)
 LOGO_ICON = "/static/assets/Logoquantum.png"
