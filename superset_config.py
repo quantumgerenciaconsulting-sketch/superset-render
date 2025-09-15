@@ -41,7 +41,7 @@ APP_NAME = "Quantum POS Analytics"
 APP_ICON = "/static/assets/quantum-bg.png"
 
 # Logo en la parte superior izquierda (reemplaza el de Superset)
-LOGO_ICON = "/static/assets/quantum-bg.png"
+LOGO_ICON = "/static/assets/Logoquantum.png"
 
 # Favicon en la pestaña del navegador
-FAVICONS = [{"href": "/static/assets/quantum-bg.png"}]
+FAVICONS = [{"href": "/static/assets/Quantumsenial.png"}]
