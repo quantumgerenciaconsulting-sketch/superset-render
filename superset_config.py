@@ -30,7 +30,7 @@ SMTP_SSL = False
 SMTP_USER = "apikey"                 # Usuario SMTP (ejemplo SendGrid)
 SMTP_PORT = 587
 SMTP_PASSWORD = "TU_API_KEY_O_PASSWORD"   # API key o password SMTP
-SMTP_MAIL_FROM = "reportes@quantumpos.com.co"
+SMTP_MAIL_FROM = "gerencia@quantumpos.com.co"
 
 # ===========================================
 # BRANDING PERSONALIZADO
