@@ -15,7 +15,10 @@ superset fab create-admin \
 
 # Procesos secundarios en background
 celery --app=superset.tasks.celery_app:app worker --pool=prefork -O fair -c 2 &
-celery --app=superset.tasks.celery_app:app beat --scheduler celery.beat.PersistentScheduler --pidfile /tmp/celerybeat.pid &
+celery --app=superset.tasks.celery_app:app beat \
+  --scheduler celery.beat.PersistentScheduler \
+  --pidfile /tmp/celerybeat.pid \
+  --schedule /tmp/celerybeat-schedule.db &
 
 # Proceso principal (Render se queda con este)
 exec gunicorn -w 1 -k gthread --timeout 120 -b 0.0.0.0:8088 "superset.app:create_app()"
