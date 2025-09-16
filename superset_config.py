@@ -24,24 +24,34 @@ FEATURE_FLAGS = {
 # CONFIGURACIÓN DE EMAIL PARA REPORTES
 # ===========================================
 EMAIL_NOTIFICATIONS = True
-SMTP_HOST = "smtp.sendgrid.net"      # Cambia por tu servidor SMTP
+SMTP_HOST = "smtp.sendgrid.net"          # Cambia por tu servidor SMTP real
 SMTP_STARTTLS = True
 SMTP_SSL = False
-SMTP_USER = "apikey"                 # Usuario SMTP (ejemplo SendGrid)
+SMTP_USER = "apikey"                     # Usuario SMTP (SendGrid usa "apikey")
 SMTP_PORT = 587
-SMTP_PASSWORD = "TU_API_KEY_O_PASSWORD"   # API key o password SMTP
-SMTP_MAIL_FROM = "gerencia@quantumpos.com.co"
+SMTP_PASSWORD = "TU_API_KEY_O_PASSWORD"  # API key o password SMTP
+SMTP_MAIL_FROM = "gerencia@quantumpos.com.co"  # Remitente que verán los usuarios
+
+# ===========================================
+# CELERY CONFIG (NECESARIO PARA ALERTS & REPORTS)
+# ===========================================
+class CeleryConfig:
+    broker_url = "redis://redis:6379/0"       # Redis como broker
+    result_backend = "redis://redis:6379/0"   # Redis como backend de resultados
+
+CELERY_CONFIG = CeleryConfig
 
 # ===========================================
 # BRANDING PERSONALIZADO
 # ===========================================
 APP_NAME = "Quantum POS Analytics"
 
-# Ícono en login y favicon
+# Ícono en login
 APP_ICON = "/static/assets/Logoquantum.png"
 
-# Logo en la parte superior izquierda (reemplaza el de Superset)
+# Logo en la parte superior izquierda
 LOGO_ICON = "/static/assets/Quantumsenial.png"
 
 # Favicon en la pestaña del navegador
 FAVICONS = [{"href": "/static/assets/Quantumsenial.png"}]
+
