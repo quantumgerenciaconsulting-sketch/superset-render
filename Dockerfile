@@ -18,6 +18,7 @@ RUN if command -v uv >/dev/null 2>&1; then \
 COPY superset_config.py /app/pythonpath/superset_config.py
 
 # Logos / Favicons personalizados
+COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
 COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
 RUN chmod 0644 /app/superset/static/assets/*.png
@@ -29,3 +30,4 @@ COPY start.sh /start.sh
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
+
