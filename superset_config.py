@@ -67,3 +67,9 @@ FEATURE_FLAGS = {
     "DASHBOARD_NATIVE_FILTERS": True,
     "ENABLE_TEMPLATE_PROCESSING": True,
 }
+
+# ===== Branding (opcional) =====
+APP_NAME = "Quantum POS Analytics"
+APP_ICON = "/static/assets/Logoquantum.png"
+LOGO_ICON = "/static/assets/Quantumsenial.png"
+FAVICONS = [{"href": "/static/assets/Quantumsenial.png"}]
