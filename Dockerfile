@@ -3,31 +3,35 @@ SHELL ["/bin/sh", "-lc"]
 
 USER root
 
-# Variables de entorno
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Instalar PyMySQL (driver MySQL) + Pillow + WeasyPrint
-RUN if command -v uv >/dev/null 2>&1; then \
-      . /app/.venv/bin/activate && uv pip install PyMySQL Pillow weasyprint; \
-    else \
-      /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint; \
-    fi
+# Drivers/bibliotecas Python que ya usabas
+RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint
 
-# Config Superset
+# --- Headless Firefox + Geckodriver ---
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      firefox-esr wget ca-certificates xz-utils \
+      libgtk-3-0 libdbus-glib-1-2 fonts-liberation && \
+    rm -rf /var/lib/apt/lists/*
+
+# Instalar geckodriver (ajusta la versión si quieres)
+ENV GECKODRIVER_VERSION=0.34.0
+RUN wget -O /tmp/geckodriver.tar.gz \
+      https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz && \
+    tar -C /usr/local/bin -xzf /tmp/geckodriver.tar.gz && \
+    rm /tmp/geckodriver.tar.gz && \
+    chmod +x /usr/local/bin/geckodriver
+
+# Config y assets
 COPY superset_config.py /app/pythonpath/superset_config.py
-
-# Logos y favicons personalizados
 COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
 COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
-
-# Permisos
 RUN chmod 0644 /app/superset/static/assets/*.png
 
 USER superset
-
-# Script de arranque
 COPY start.sh /start.sh
 
 EXPOSE 8088
