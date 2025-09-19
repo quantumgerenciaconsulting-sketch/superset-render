@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-# Modo worker Celery
+# Modo worker de Celery
 if [ "$1" = "worker" ]; then
   exec celery --app=superset.tasks.celery_app:app worker -O fair -c 2
 fi
 
-# Modo beat (scheduler)
+# Modo beat (scheduler de Celery)
 if [ "$1" = "beat" ]; then
   exec celery --app=superset.tasks.celery_app:app beat \
     --scheduler celery.beat.PersistentScheduler \
@@ -17,7 +17,7 @@ fi
 # Modo web (Superset)
 superset db upgrade
 
-# Crear admin si no existe (no falla si ya existe)
+# Crea usuario admin si no existe (idempotente)
 superset fab create-admin \
   --username admin \
   --firstname Admin \
@@ -25,9 +25,9 @@ superset fab create-admin \
   --email admin@quantumpos.com.co \
   --password admin || true
 
-# Sincroniza roles/Permisos
+# Sincroniza roles y permisos
 superset init
 
-# Arranca Gunicorn (web)
+# Arranque del servidor web con Gunicorn
 exec gunicorn -w 1 -k gthread --threads 2 --timeout 120 \
   -b 0.0.0.0:8088 "superset.app:create_app()"
