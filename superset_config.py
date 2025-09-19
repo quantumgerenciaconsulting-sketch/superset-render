@@ -3,20 +3,28 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 # ========= REDIS =========
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv(
+    "REDIS_URL",
+    "redis://default:PASS@redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com:12410/0"
+)
 
+# Celery config
 class CeleryConfig:
     broker_url = REDIS_URL
     result_backend = REDIS_URL
-    imports = ("superset.sql_lab",)  # + tareas internas
+    imports = ("superset.sql_lab", "superset.tasks.schedules")
     broker_transport_options = {"visibility_timeout": 3600}
     task_ignore_result = True
-    worker_concurrency = int(os.getenv("WORKER_CONCURRENCY", "2"))
+    worker_concurrency = 1
 
 CELERY_CONFIG = CeleryConfig
 
-from cachelib.redis import RedisCache
+# Beat usando redbeat
+CELERY_BEAT_SCHEDULE = {}
+beat_scheduler = "redbeat.RedBeatScheduler"
 
+# Cache
+from cachelib.redis import RedisCache
 CACHE_CONFIG = {
     "CACHE_TYPE": "RedisCache",
     "CACHE_REDIS_URL": REDIS_URL,
@@ -24,47 +32,38 @@ CACHE_CONFIG = {
     "CACHE_DEFAULT_TIMEOUT": 300,
 }
 DATA_CACHE_CONFIG = CACHE_CONFIG
-
 RESULTS_BACKEND = RedisCache(
-    host=os.getenv("REDIS_HOST", "redis"),
-    port=int(os.getenv("REDIS_PORT", "6379")),
+    host="redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com",
+    port=12410,
+    password="PASS",
     db=0,
-    key_prefix="superset_results",
+    key_prefix="superset_results"
 )
-
 RATELIMIT_STORAGE_URI = REDIS_URL
 
-# ====== URL base ======
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8088")
+# URL base
+BASE_URL = os.getenv("BASE_URL", "https://analytics.quantumpos.com.co")
 ENABLE_PROXY_FIX = True
 
-# ====== EMAIL / SMTP ======
+# ====== EMAIL ======
 EMAIL_NOTIFICATIONS = True
-SMTP_HOST = os.getenv("SMTP_HOST", "mail.quantumpos.com.co")
-SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "True") == "True"  # puerto 587
-SMTP_SSL = os.getenv("SMTP_SSL", "False") == "True"           # puerto 465
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_STARTTLS = True
+SMTP_SSL = False
 SMTP_USER = os.getenv("SMTP_USER", "gerencia@quantumpos.com.co")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_PORT = 587
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "APP_PASSWORD_GENERADA")
 SMTP_MAIL_FROM = os.getenv("SMTP_MAIL_FROM", "gerencia@quantumpos.com.co")
 
-# ====== FEATURES ======
+# ====== DB MySQL ======
+SQLALCHEMY_DATABASE_URI = os.getenv(
+    "SQLALCHEMY_DATABASE_URI",
+    "mysql+pymysql://superset:CambiaEstaClaveSuperset!!@superset_mysql:3306/superset_db"
+)
+
+# Features
 FEATURE_FLAGS = {
     "ALERT_REPORTS": True,
     "DASHBOARD_NATIVE_FILTERS": True,
-    "DASHBOARD_CROSS_FILTERS": True,
-    "DASHBOARD_NATIVE_FILTERS_SET": True,
-    "ALLOW_DASHBOARD_DOMAIN_SHARDING": True,
     "ENABLE_TEMPLATE_PROCESSING": True,
-    "DISPLAY_MARKDOWN": True,
-    "OMNIBAR": True,
-    "DRILL_BY": True,
-    "DRILL_TO_DETAIL": True,
-    "HORIZONTAL_FILTER_BAR": True,
 }
-
-# ====== BRANDING (opcional) ======
-APP_NAME = "Quantum POS Analytics"
-# APP_ICON = "/static/assets/Logoquantum.png"
-# LOGO_ICON = "/static/assets/Quantumsenial.png"
-# FAVICONS = [{"href": "/static/assets/Quantumsenial.png"}]
