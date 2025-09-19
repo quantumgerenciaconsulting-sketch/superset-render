@@ -3,26 +3,40 @@ import os
 import pymysql
 pymysql.install_as_MySQLdb()
 
-# ========= REDIS (usa tu Redis Cloud o local si cambias luego) =========
+from celery.schedules import crontab
+from cachelib.redis import RedisCache
+
+# ===== Redis (broker/resultados) =====
 REDIS_URL = os.getenv(
     "REDIS_URL",
-    "redis://default:lGS7NuMqCimKa8AOYQVKg7up8FM2ZurG@redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com:12410/0"
+    "redis://default:lGS7NuMqCimKa8AOYQVKg7up8FM2ZurG@redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com:12410/0",
 )
 
-# ----- Celery (Reports/Alerts, SQL Lab async) -----
+# ===== Celery (Reports/Alerts, SQL Lab async) =====
 class CeleryConfig:
     broker_url = REDIS_URL
     result_backend = REDIS_URL
-    imports = ("superset.sql_lab",)
+    # MUY IMPORTANTE: incluir tasks de reports
+    imports = ("superset.sql_lab", "superset.tasks.reports")
     broker_transport_options = {"visibility_timeout": 3600}
     task_ignore_result = True
-    worker_concurrency = 1   # ahorra RAM
+    worker_concurrency = 1
+
+    # Scheduler de reports (programa ejecución y limpieza de logs)
+    beat_schedule = {
+        "reports_scheduler": {
+            "task": "reports.scheduler",
+            "schedule": crontab(minute="*", hour="*"),
+        },
+        "reports_prune_log": {
+            "task": "reports.prune_log",
+            "schedule": crontab(minute=0, hour=0),
+        },
+    }
 
 CELERY_CONFIG = CeleryConfig
 
-# ----- Caches y resultados usando Redis -----
-from cachelib.redis import RedisCache
-
+# ===== Cachés y resultados =====
 CACHE_CONFIG = {
     "CACHE_TYPE": "RedisCache",
     "CACHE_REDIS_URL": REDIS_URL,
@@ -39,28 +53,41 @@ RESULTS_BACKEND = RedisCache(
     key_prefix="superset_results",
 )
 
-# Rate limits sin warning
 RATELIMIT_STORAGE_URI = REDIS_URL
 
-# ====== URL base para generar links correctos en correos ======
+# ===== Base URL (para links correctos en emails) =====
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8088")
-ENABLE_PROXY_FIX = True   # importante si vas detrás de Nginx
+ENABLE_PROXY_FIX = True
 
-# ====== EMAIL (para Reports/Alerts) ======
+# ===== Email / SMTP =====
 EMAIL_NOTIFICATIONS = True
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.sendgrid.net")
 SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "True") == "True"
 SMTP_SSL = os.getenv("SMTP_SSL", "False") == "True"
 SMTP_USER = os.getenv("SMTP_USER", "apikey")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "TU_API_KEY")   # cámbialo por env
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "TU_API_KEY")  # cambia en .env
 SMTP_MAIL_FROM = os.getenv("SMTP_MAIL_FROM", "gerencia@quantumpos.com.co")
 
-# ====== Opcional: metadata de Superset en MySQL (mejor que SQLite) ======
-# Déjalo a través de variable de entorno:
+# Envío real (si True, NO envía)
+ALERT_REPORTS_NOTIFICATION_DRY_RUN = os.getenv(
+    "ALERT_REPORTS_NOTIFICATION_DRY_RUN", "False"
+) == "True"
+
+# ===== Metadata en MySQL (poner en .env con SQLALCHEMY_DATABASE_URI) =====
 # SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 
-# ====== FEATURES ======
+# ===== WebDriver (capturas PNG/PDF) =====
+WEBDRIVER_TYPE = os.getenv("WEBDRIVER_TYPE", "firefox")
+WEBDRIVER_BASEURL = os.getenv("WEBDRIVER_BASEURL", "http://superset_app:8088")
+WEBDRIVER_BASEURL_USER_FRIENDLY = os.getenv(
+    "WEBDRIVER_BASEURL_USER_FRIENDLY", BASE_URL
+)
+WEBDRIVER_OPTION_ARGS = ["--headless"]
+SCREENSHOT_LOCATE_WAIT = 100
+SCREENSHOT_LOAD_WAIT = 100
+
+# ===== Feature flags =====
 FEATURE_FLAGS = {
     "ALERT_REPORTS": True,
     "DASHBOARD_NATIVE_FILTERS": True,
@@ -75,9 +102,8 @@ FEATURE_FLAGS = {
     "HORIZONTAL_FILTER_BAR": True,
 }
 
-# ====== BRANDING ======
+# ===== Branding (opcional) =====
 APP_NAME = "Quantum POS Analytics"
 APP_ICON = "/static/assets/Logoquantum.png"
 LOGO_ICON = "/static/assets/Quantumsenial.png"
 FAVICONS = [{"href": "/static/assets/Quantumsenial.png"}]
-
