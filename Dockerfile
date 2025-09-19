@@ -27,6 +27,13 @@ RUN wget -O /tmp/geckodriver.tar.gz \
     rm /tmp/geckodriver.tar.gz && \
     chmod +x /usr/local/bin/geckodriver
 
+# Config y assets (si no tienes los PNG, elimina estas 4 líneas)
+COPY superset_config.py /app/pythonpath/superset_config.py
+COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
+COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
+COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
+RUN chmod 0644 /app/superset/static/assets/*.png || true
+
 # Config y assets
 COPY superset_config.py /app/pythonpath/superset_config.py
 COPY start.sh /start.sh
@@ -36,3 +43,4 @@ USER superset
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
+
