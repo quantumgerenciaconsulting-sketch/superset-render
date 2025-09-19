@@ -28,6 +28,6 @@ superset fab create-admin \
 # Sincroniza roles/Permisos
 superset init
 
-# Arranca Gunicorn
+# Arranca Gunicorn (web)
 exec gunicorn -w 1 -k gthread --threads 2 --timeout 120 \
   -b 0.0.0.0:8088 "superset.app:create_app()"
