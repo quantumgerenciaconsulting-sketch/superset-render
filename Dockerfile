@@ -7,10 +7,10 @@ USER root
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Paquetes Python extra (drivers que ya usas)
+# Paquetes Python extra (drivers de base de datos, utilidades)
 RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint
 
-# --- Headless Firefox + Geckodriver (necesarios para PNG/PDF de Reports) ---
+# --- Headless Firefox + Geckodriver (necesarios para capturas PNG/PDF de Reports) ---
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       firefox-esr wget curl ca-certificates xz-utils \
@@ -19,7 +19,7 @@ RUN apt-get update && \
       fonts-dejavu fonts-noto-core && \
     rm -rf /var/lib/apt/lists/*
 
-# Geckodriver (ajusta versión si quieres)
+# Geckodriver (ajusta la versión según requieras)
 ENV GECKODRIVER_VERSION=0.34.0
 RUN wget -O /tmp/geckodriver.tar.gz \
       https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz && \
@@ -27,10 +27,10 @@ RUN wget -O /tmp/geckodriver.tar.gz \
     rm /tmp/geckodriver.tar.gz && \
     chmod +x /usr/local/bin/geckodriver
 
-# En Debian/Ubuntu el binario es "firefox-esr"; creamos alias "firefox"
+# En Debian/Ubuntu, el binario es "firefox-esr"; creamos alias "firefox"
 RUN ln -sf /usr/bin/firefox-esr /usr/bin/firefox
 
-# Config y assets (si no tienes los PNG, elimina estas 4 líneas)
+# Configuración y assets (imágenes de branding)
 COPY superset_config.py /app/pythonpath/superset_config.py
 COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
 COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
