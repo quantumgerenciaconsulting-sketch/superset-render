@@ -16,13 +16,13 @@ REDIS_URL = os.getenv(
 class CeleryConfig:
     broker_url = REDIS_URL
     result_backend = REDIS_URL
-    # MUY IMPORTANTE: incluir tasks de reports
+    # IMPORTANTE: incluir tasks de reports
     imports = ("superset.sql_lab", "superset.tasks.reports")
     broker_transport_options = {"visibility_timeout": 3600}
     task_ignore_result = True
     worker_concurrency = 1
 
-    # Scheduler de reports (programa ejecución y limpieza de logs)
+    # Scheduler de reports (coloca jobs y limpia logs)
     beat_schedule = {
         "reports_scheduler": {
             "task": "reports.scheduler",
@@ -74,7 +74,7 @@ ALERT_REPORTS_NOTIFICATION_DRY_RUN = os.getenv(
     "ALERT_REPORTS_NOTIFICATION_DRY_RUN", "False"
 ) == "True"
 
-# ===== Metadata en MySQL (poner en .env con SQLALCHEMY_DATABASE_URI) =====
+# ===== Metadata en MySQL (toma la URI del .env) =====
 # SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 
 # ===== WebDriver (capturas PNG/PDF) =====
