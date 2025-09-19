@@ -12,9 +12,9 @@ superset fab create-admin \
   --email admin@quantumpos.com.co \
   --password admin || true
 
-# Roles/permiso/semillas
+# Inicializar roles, permisos y defaults
 superset init
 
-# App web
+# Arrancar Gunicorn
 exec gunicorn -w 1 -k gthread --threads 2 --timeout 120 \
   -b 0.0.0.0:8088 "superset.app:create_app()"
