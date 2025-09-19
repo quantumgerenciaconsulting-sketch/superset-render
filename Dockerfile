@@ -1,25 +1,24 @@
+# Usa Superset 5.x (latest al día)
 FROM apache/superset:latest
 SHELL ["/bin/sh", "-lc"]
 
 USER root
 
-# Rutas útiles
+# RUTA para configs custom
 ENV PYTHONPATH="/app/pythonpath:${PYTHONPATH}"
 RUN mkdir -p /app/pythonpath /app/superset/static/assets
 
-# Paquetes Python extra (drivers de base de datos, utilidades)
+# Dependencias Python (drivers + pdf/png)
 RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint
 
-# --- Headless Firefox + Geckodriver (necesarios para capturas PNG/PDF de Reports) ---
+# ---- Headless Firefox + Geckodriver ----
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      firefox-esr wget curl ca-certificates xz-utils \
+      firefox-esr wget ca-certificates xz-utils \
       libgtk-3-0 libdbus-glib-1-2 fonts-liberation \
-      libcairo2 libpango-1.0-0 libpangoft2-1.0-0 libgdk-pixbuf2.0-0 \
-      fonts-dejavu fonts-noto-core && \
+      libasound2 libnss3 libx11-xcb1 libxtst6 libxrender1 libxi6 && \
     rm -rf /var/lib/apt/lists/*
 
-# Geckodriver (ajusta la versión según requieras)
 ENV GECKODRIVER_VERSION=0.34.0
 RUN wget -O /tmp/geckodriver.tar.gz \
       https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz && \
@@ -27,19 +26,18 @@ RUN wget -O /tmp/geckodriver.tar.gz \
     rm /tmp/geckodriver.tar.gz && \
     chmod +x /usr/local/bin/geckodriver
 
-# En Debian/Ubuntu, el binario es "firefox-esr"; creamos alias "firefox"
-RUN ln -sf /usr/bin/firefox-esr /usr/bin/firefox
-
-# Configuración y assets (imágenes de branding)
+# Copia de configuración y assets (si los tienes)
 COPY superset_config.py /app/pythonpath/superset_config.py
-COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
-COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
-COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
-RUN chmod 0644 /app/superset/static/assets/*.png || true
+# (opcional) descomenta si tienes estos archivos:
+# COPY assets/quantum-bg.png /app/superset/static/assets/quantum-bg.png
+# COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
+# COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
+# RUN chmod 0644 /app/superset/static/assets/*.png || true
 
-# Script de arranque
-USER superset
+# Script de arranque del servicio web
 COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
+USER superset
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
