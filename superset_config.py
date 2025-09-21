@@ -5,7 +5,10 @@ import os
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8088")
 
 # --- Metastore (MySQL) ---
-SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")  # debe venir en .env
+SQLALCHEMY_DATABASE_URI = os.getenv(
+    "SQLALCHEMY_DATABASE_URI",
+    "mysql+pymysql://superset:CambiaEstaClaveSuperset!!@superset_mysql:3306/superset_db?charset=utf8mb4",
+)
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # --- Redis / Celery ---
