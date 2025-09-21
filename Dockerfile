@@ -25,8 +25,8 @@ RUN wget -O /tmp/geckodriver.tar.gz \
     rm /tmp/geckodriver.tar.gz && \
     chmod +x /usr/local/bin/geckodriver
 
-# Librerías Python útiles (opcional)
-RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint
+# Librerías Python necesarias para MySQL, imágenes, PDF y Redis (para Celery/alerts)
+RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint redis
 
 # Directorios que usaremos y permisos para celery beat
 RUN mkdir -p /app/pythonpath /app/superset_home /var/lib/superset/celery && \
@@ -39,8 +39,7 @@ COPY assets/Logoquantum.png /app/superset/static/assets/Logoquantum.png
 COPY assets/Quantumsenial.png /app/superset/static/assets/Quantumsenial.png
 RUN chmod 0644 /app/superset/static/assets/*.png || true
 
-# Copiamos config y script de arranque
-COPY superset_config.py /app/pythonpath/superset_config.py
+# Script de arranque
 COPY start.sh /start.sh
 RUN chmod 0755 /start.sh && chown superset:superset /start.sh
 
@@ -49,5 +48,3 @@ USER superset
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
-
-
