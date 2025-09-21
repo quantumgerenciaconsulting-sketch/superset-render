@@ -7,16 +7,13 @@ from celery.schedules import crontab
 from cachelib.redis import RedisCache
 
 # ===== Redis (broker/resultados) =====
-REDIS_URL = os.getenv(
-    "REDIS_URL",
-    "redis://default:lGS7NuMqCimKa8AOYQVKg7up8FM2ZurG@redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com:12410/0",
-)
+REDIS_URL = os.getenv("REDIS_URL")
 
 # ===== Celery (Reports/Alerts, SQL Lab async) =====
 class CeleryConfig:
     broker_url = REDIS_URL
     result_backend = REDIS_URL
-    # Importa también tasks de reports (Superset 5)
+    # Imports válidos en Superset 5
     imports = ("superset.sql_lab", "superset.tasks.reports")
     broker_transport_options = {"visibility_timeout": 3600}
     task_ignore_result = True
@@ -45,7 +42,7 @@ CACHE_CONFIG = {
 }
 DATA_CACHE_CONFIG = CACHE_CONFIG
 
-# Resultados de consultas en Redis (no uses from_url en 5.0)
+# Resultados de consultas en Redis
 RESULTS_BACKEND = RedisCache(
     host="redis-12410.c14.us-east-1-3.ec2.redns.redis-cloud.com",
     port=12410,
@@ -62,21 +59,16 @@ ENABLE_PROXY_FIX = True
 
 # ===== Email / SMTP =====
 EMAIL_NOTIFICATIONS = True
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.sendgrid.net")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "True") == "True"
 SMTP_SSL = os.getenv("SMTP_SSL", "False") == "True"
-SMTP_USER = os.getenv("SMTP_USER", "apikey")
+SMTP_USER = os.getenv("SMTP_USER", "quantum.gerencia.consulting@gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "CAMBIA_ESTA_CLAVE")
-SMTP_MAIL_FROM = os.getenv("SMTP_MAIL_FROM", "gerencia@quantumpos.com.co")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_MAIL_FROM = os.getenv("SMTP_MAIL_FROM", SMTP_USER)
 
-# Si es True, NO envía emails (dry-run). Aquí lo tomamos del .env.
-ALERT_REPORTS_NOTIFICATION_DRY_RUN = os.getenv(
-    "ALERT_REPORTS_NOTIFICATION_DRY_RUN", "False"
-) == "True"
-
-# ===== Metadata: se obtiene de la variable de entorno =====
-# SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+# Si es True, NO envía emails (dry-run).
+ALERT_REPORTS_NOTIFICATION_DRY_RUN = os.getenv("ALERT_REPORTS_NOTIFICATION_DRY_RUN", "False") == "True"
 
 # ===== WebDriver (capturas PNG/PDF) =====
 WEBDRIVER_TYPE = os.getenv("WEBDRIVER_TYPE", "firefox")
