@@ -17,6 +17,10 @@ RUN apt-get update && \
       fonts-dejavu fonts-liberation && \
     rm -rf /var/lib/apt/lists/*
 
+
+
+
+
 # Geckodriver
 ENV GECKODRIVER_VERSION=0.34.0
 RUN wget -O /tmp/geckodriver.tar.gz \
@@ -29,8 +33,8 @@ RUN wget -O /tmp/geckodriver.tar.gz \
 RUN /app/.venv/bin/pip install --no-cache-dir PyMySQL Pillow weasyprint redis
 
 # Directorios que usaremos y permisos para celery beat
-RUN mkdir -p /app/pythonpath /app/superset_home /var/lib/superset/celery && \
-    chown -R superset:superset /app/pythonpath /app/superset_home /var/lib/superset
+RUN mkdir -p /var/lib/superset/celery && \
+    chown -R superset:superset /var/lib/superset
 
 # Config y assets (si no tienes los PNG, elimina estas 4 líneas)
 COPY superset_config.py /app/pythonpath/superset_config.py
@@ -48,3 +52,4 @@ USER superset
 
 EXPOSE 8088
 CMD ["sh", "/start.sh"]
+
