@@ -44,7 +44,8 @@ FEATURE_FLAGS = {
 }
 
 # Usuario con permisos para tomar screenshots (debe existir)
-THUMBNAIL_SELENIUM_USER = os.getenv("ADMIN_USER", "admin")
+THUMBNAIL_SELENIUM_USER = os.getenv("THUMBNAIL_SELENIUM_USER", os.getenv("ADMIN_USER", "admin"))
+THUMBNAIL_SELENIUM_PASSWORD = os.getenv("THUMBNAIL_SELENIUM_PASSWORD")
 THUMBNAIL_CACHE_CONFIG = {"CACHE_TYPE": "null"}  # opcional
 
 WEBDRIVER_BASEURL = BASE_URL  # muy importante para que Selenium apunte al dominio correcto
