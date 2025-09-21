@@ -64,6 +64,16 @@ AUTH_RATE_LIMITED = False          # apaga rate limit en /login
 RATELIMIT_STORAGE_URI = None       # evita que FAB inicialice Limiter
 AUTH_RATE_LIMIT = None
 
+# (Opcional) Logger de eventos en JSON para evitar warnings con LocalProxy
+try:
+    from superset.utils.log import JSONEventLogger
+    EVENT_LOGGER = JSONEventLogger()
+except Exception:
+    pass
+
+
+
+
 # ===== Branding (opcional) =====
 APP_NAME = "Quantum POS Analytics"
 APP_ICON = "/static/assets/Logoquantum.png"
