@@ -56,6 +56,8 @@ WEBDRIVER_WINDOW = {"width": 1920, "height": 1080}  # opcional
 SUPERSET_WEBSERVER_TIMEOUT = 120
 DEFAULT_TIME_FILTER = "Last week"
 
+RATELIMIT_ENABLED = False
+AUTH_RATE_LIMITED = False
 
 # ===== Branding (opcional) =====
 APP_NAME = "Quantum POS Analytics"
