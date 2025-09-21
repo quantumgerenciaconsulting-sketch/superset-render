@@ -56,8 +56,12 @@ WEBDRIVER_WINDOW = {"width": 1920, "height": 1080}  # opcional
 SUPERSET_WEBSERVER_TIMEOUT = 120
 DEFAULT_TIME_FILTER = "Last week"
 
-RATELIMIT_ENABLED = False
-AUTH_RATE_LIMITED = False
+from flask_appbuilder.security.manager import AUTH_DB
+AUTH_TYPE = AUTH_DB                # fuerza el login clásico (con vista /login)
+RATELIMIT_ENABLED = False          # apaga el limiter global
+AUTH_RATE_LIMITED = False          # apaga rate limit en /login
+RATELIMIT_STORAGE_URI = None       # evita que FAB inicialice Limiter
+AUTH_RATE_LIMIT = None
 
 # ===== Branding (opcional) =====
 APP_NAME = "Quantum POS Analytics"
